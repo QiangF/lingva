@@ -4,6 +4,7 @@
 
 ;; Author: marty hiatt <martianhiatus@riseup.net>
 ;; Website: https://codeberg.org/martianh/lingva.el
+;; Package-Requires: ((plz.el))
 ;; Keywords: convenience, translation
 
 ;; This file is not part of GNU Emacs.
@@ -28,6 +29,7 @@
 ;;; Code:
 
 (require 'json)
+(require 'plz "~/code/elisp/plz.el/plz.el")
 
 (defvar url-http-end-of-headers)
 (defvar url-request-method)
@@ -234,28 +236,27 @@ to `lingva-source' and a target language different to
           (read-string (format "Translate (%s): " (or region (current-word) ""))
                        nil nil (or region (current-word))))
          (text (replace-regexp-in-string "/" "|" text))
-         (query (url-hexify-string text))
-         (response-buffer (url-retrieve-synchronously
-                           (concat lingva-instance "/api/v1/"
-                                   lingva-source "/"
-                                   lingva-target "/"
-                                   query))))
-    (with-current-buffer response-buffer
-      (if (not (string-prefix-p "2" (lingva--status)))
-          (switch-to-buffer response-buffer)
-        (let* ((json-raw (progn
-                           (set-buffer-multibyte t)
-                           (goto-char url-http-end-of-headers)
-                           (json-read)))
-               (json (replace-regexp-in-string "|" "/" (cdar json-raw))))
-          (with-current-buffer (get-buffer-create "*lingva*")
-            (let ((inhibit-read-only t))
-              (special-mode)
-              (delete-region (point-min) (point-max))
-              (insert json)
-              (kill-new json)
-              (message "Translation copied to clipboard.")
-              (display-buffer (current-buffer)))))))))
+         (query (url-hexify-string text)))
+    (plz 'get (concat lingva-instance "/api/v1/"
+                      lingva-source "/"
+                      lingva-target "/"
+                      query)
+      :as #'json-read
+      :then (lambda (response)
+              (with-current-buffer (get-buffer-create
+                                    (concat "*lingva-"
+                                            lingva-source
+                                            "-"
+                                            lingva-target
+                                            "*"))
+                (let ((inhibit-read-only t)
+                      (json (replace-regexp-in-string "|" "/" (cdar response))))
+                  (special-mode)
+                  (delete-region (point-min) (point-max))
+                  (insert json)
+                  (kill-new json)
+                  (message "Translation copied to clipboard.")
+                  (display-buffer (current-buffer))))))))
 
 ;; process the http response:
 
