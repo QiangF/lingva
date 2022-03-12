@@ -13,3 +13,9 @@ To choose which lingva instance to interact with, customize =lingva-instance=. I
 For now the list of supported languages is what is returned by the official [[https://lingva.ml][lingva.ml]] instance's API. It can be obtained/updated by running =lingva-update-lingva-languages=.
 
 For now it is not on MELPA, to install, clone/download, add the directory to your load path, and require.
+
+This branch uses the =plz.el= library instead of the built-in =url.el= for async requests. As =plz= is not on MELPA yet, you need to install it yourself to use it with this branch.
+
+** similar projects
+
+There is a fully-featured Google Translate package for emacs: https://github.com/atykhonov/google-translate. This might be useful if you need to access more aspects of the API, as the lingva version is bare-bones and only returns the translated text. 
